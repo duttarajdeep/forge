@@ -1,0 +1,2631 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Forge — SE Upskilling Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script>
+  // Apply theme synchronously, before first paint, to avoid a flash.
+  (function () {
+    var t = localStorage.getItem("learning.theme") || "auto";
+    document.documentElement.setAttribute("data-theme", t);
+  })();
+</script>
+<style>
+  /* ─── Theme tokens ───────────────────────────────────────────── */
+  /* Default = light. [data-theme="dark"] overrides explicitly.
+     [data-theme="auto"] follows OS preference via the media query. */
+  :root {
+    --bg: #fafaf9;
+    --surface: #ffffff;
+    --border: #e7e5e4;
+    --border-strong: #d6d3d1;
+    --text: #1c1917;
+    --muted: #78716c;
+    --accent: #0f766e;
+    --accent-soft: #ccfbf1;
+    --warn: #b45309;
+    --done: #15803d;
+    --code-bg: #f5f5f4;
+    --shadow: 0 1px 2px rgba(0,0,0,0.04);
+    color-scheme: light;
+  }
+  [data-theme="dark"] {
+    --bg: #0c0a09;
+    --surface: #1c1917;
+    --border: #292524;
+    --border-strong: #44403c;
+    --text: #f5f5f4;
+    --muted: #a8a29e;
+    --accent: #2dd4bf;
+    --accent-soft: #134e4a;
+    --warn: #fbbf24;
+    --done: #4ade80;
+    --code-bg: #292524;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3);
+    color-scheme: dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    [data-theme="auto"] {
+      --bg: #0c0a09;
+      --surface: #1c1917;
+      --border: #292524;
+      --border-strong: #44403c;
+      --text: #f5f5f4;
+      --muted: #a8a29e;
+      --accent: #2dd4bf;
+      --accent-soft: #134e4a;
+      --warn: #fbbf24;
+      --done: #4ade80;
+      --code-bg: #292524;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3);
+      color-scheme: dark;
+    }
+  }
+  body, .seg-toggle, .seg-toggle button {
+    transition: background-color 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 13px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: "liga" 1, "calt" 1;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code, pre {
+    font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 12px;
+  }
+  code {
+    background: var(--code-bg);
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+  pre {
+    background: var(--code-bg);
+    padding: 12px 14px;
+    border-radius: 6px;
+    overflow-x: auto;
+  }
+  pre code { background: transparent; padding: 0; }
+
+  /* Layout */
+  .app {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    min-height: 100vh;
+  }
+  nav.sidebar {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 24px 16px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  .brand {
+    font-weight: 600;
+    font-size: 15px;
+    margin-bottom: 24px;
+    padding: 0 8px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .brand-text {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .brand-text-inner {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .brand-icon {
+    flex-shrink: 0;
+    color: var(--accent);
+  }
+  .sidebar-toggle {
+    appearance: none;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--muted);
+    width: 28px;
+    height: 28px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+    padding: 0;
+    line-height: 1;
+  }
+  .sidebar-toggle:hover { color: var(--text); background: var(--code-bg); }
+  .sidebar-reopen {
+    display: none;
+    position: fixed;
+    top: 14px;
+    left: 14px;
+    z-index: 35;
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    border-radius: 6px;
+    color: var(--text);
+    width: 36px;
+    height: 36px;
+    cursor: pointer;
+    font-size: 18px;
+    box-shadow: var(--shadow);
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    line-height: 1;
+  }
+  .sidebar-reopen:hover { background: var(--code-bg); }
+  body.sidebar-collapsed .sidebar-reopen { display: flex; }
+  .brand .sub {
+    display: block;
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 400;
+    margin-top: 2px;
+  }
+  .nav-section {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    padding: 12px 8px 6px;
+    font-weight: 600;
+  }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 7px 10px;
+    border-radius: 5px;
+    color: var(--text);
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .nav-item:hover { background: var(--code-bg); text-decoration: none; }
+  .nav-item.active { background: var(--accent-soft); color: var(--accent); font-weight: 500; }
+  .nav-item-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    flex: 1;
+  }
+  .nav-letter {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted);
+    width: 14px;
+    flex-shrink: 0;
+    text-align: center;
+  }
+  .nav-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .nav-item.active .nav-letter { color: var(--accent); }
+  .nav-count {
+    font-size: 11px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ─── Segmented control (Theme + Mode toggles) ─────────────── */
+  .seg-toggle {
+    display: flex;
+    gap: 0;
+    margin: 10px 8px 0;
+    padding: 3px;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+  .seg-toggle button {
+    flex: 1;
+    appearance: none;
+    background: transparent;
+    border: none;
+    border-radius: 5px;
+    padding: 5px 6px;
+    font: inherit;
+    font-size: 11px;
+    color: var(--muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+  }
+  .seg-toggle button:hover { color: var(--text); }
+  .seg-toggle button.active {
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: var(--shadow);
+    font-weight: 600;
+  }
+  .seg-toggle .icon { font-size: 12px; }
+  .seg-toggle .label {
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .seg-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin: 16px 12px 0;
+    font-weight: 600;
+  }
+
+  /* Mode chip used in the AI banner */
+  .mode-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    background: rgba(139,92,246,0.15);
+    color: var(--accent);
+    border: 1px solid rgba(139,92,246,0.3);
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+  main {
+    padding: 40px 48px 80px;
+    max-width: 960px;
+    width: 100%;
+  }
+  h1 { font-size: 22px; font-weight: 600; margin: 0 0 8px; letter-spacing: -0.01em; }
+  h2 {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin: 0 0 16px;
+  }
+  h3 { font-size: 16px; font-weight: 600; margin: 28px 0 12px; }
+  h4 { font-size: 14px; font-weight: 600; margin: 20px 0 8px; }
+  .subtitle { color: var(--muted); font-size: 14px; margin-bottom: 28px; }
+  .tagline {
+    color: var(--accent);
+    font-size: 13px;
+    font-style: italic;
+    letter-spacing: 0.01em;
+    margin: -4px 0 6px;
+    opacity: 0.85;
+  }
+  .breadcrumb {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  .breadcrumb a { color: var(--muted); }
+
+  /* Cards */
+  section.card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin-bottom: 16px;
+  }
+  section.card.suggested {
+    background: var(--accent-soft);
+    border-color: transparent;
+  }
+  section.card.suggested h2 { color: var(--accent); }
+
+  /* Progress bars */
+  .track-row {
+    display: grid;
+    grid-template-columns: 1fr 64px 1fr 48px;
+    gap: 14px;
+    align-items: center;
+    padding: 10px 0;
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+  }
+  .track-row + .track-row { border-top: 1px solid var(--border); }
+  .track-row:hover .track-name { color: var(--accent); }
+  .track-name { font-weight: 500; }
+  .track-count, .pct { color: var(--muted); font-size: 13px; }
+  .pct { text-align: right; }
+  .bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .bar-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width 0.4s ease; }
+  .overall {
+    margin-top: 14px;
+    padding-top: 16px;
+    border-top: 2px solid var(--border);
+    font-weight: 600;
+  }
+  .overall .track-count, .overall .pct { color: var(--text); }
+
+  /* Tinted track cards (dashboard) */
+  .track-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+  }
+  .track-card {
+    --tint-h: 200;
+    --tint-bg: hsl(var(--tint-h) 65% 96%);
+    --tint-border: hsl(var(--tint-h) 50% 86%);
+    --tint-fg: hsl(var(--tint-h) 50% 38%);
+    --tint-fill: hsl(var(--tint-h) 55% 55%);
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    background: var(--tint-bg);
+    border: 1px solid var(--tint-border);
+    border-radius: 10px;
+    padding: 14px 14px 12px;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+  }
+  .track-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+    border-color: var(--tint-fg);
+  }
+  .track-card .tc-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .track-card .tc-letter {
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    background: var(--tint-fg);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+  .track-card .tc-title {
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.3;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+  .track-card .tc-bar {
+    height: 5px;
+    background: hsl(var(--tint-h) 40% 88%);
+    border-radius: 3px;
+    overflow: hidden;
+    margin: 4px 0 8px;
+  }
+  .track-card .tc-bar-fill {
+    height: 100%;
+    background: var(--tint-fill);
+    border-radius: 3px;
+    transition: width 0.4s ease;
+  }
+  .track-card .tc-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 11px;
+    color: var(--tint-fg);
+    font-variant-numeric: tabular-nums;
+  }
+  .track-card .tc-meta .tc-count { font-weight: 500; }
+  .track-card .tc-meta .tc-pct { font-weight: 700; font-size: 12px; }
+
+  /* Dark mode: deeper tints, lighter text */
+  [data-theme="dark"] .track-card {
+    --tint-bg: hsl(var(--tint-h) 25% 14%);
+    --tint-border: hsl(var(--tint-h) 30% 24%);
+    --tint-fg: hsl(var(--tint-h) 55% 70%);
+    --tint-fill: hsl(var(--tint-h) 55% 55%);
+  }
+  [data-theme="dark"] .track-card .tc-bar { background: hsl(var(--tint-h) 20% 22%); }
+  @media (prefers-color-scheme: dark) {
+    [data-theme="auto"] .track-card {
+      --tint-bg: hsl(var(--tint-h) 25% 14%);
+      --tint-border: hsl(var(--tint-h) 30% 24%);
+      --tint-fg: hsl(var(--tint-h) 55% 70%);
+      --tint-fill: hsl(var(--tint-h) 55% 55%);
+    }
+    [data-theme="auto"] .track-card .tc-bar { background: hsl(var(--tint-h) 20% 22%); }
+  }
+
+  .track-overall {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+    display: grid;
+    grid-template-columns: 1fr 70px 1fr 50px;
+    gap: 12px;
+    align-items: center;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .track-overall .track-count, .track-overall .pct { color: var(--text); font-size: 13px; }
+  .track-overall .pct { text-align: right; }
+
+  @media (max-width: 480px) {
+    .track-cards { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .track-card { padding: 10px; }
+    .track-card .tc-letter { width: 24px; height: 24px; font-size: 12px; }
+    .track-card .tc-title { font-size: 12px; }
+  }
+
+  /* Week grid */
+  .week-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+  .week-cell {
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+  }
+  .week-letter { font-weight: 600; font-size: 12px; color: var(--muted); }
+  .week-count {
+    font-variant-numeric: tabular-nums;
+    font-size: 16px;
+    font-weight: 500;
+    margin-top: 4px;
+  }
+  .week-count .target { color: var(--muted); font-size: 13px; font-weight: 400; }
+  .week-dots { display: flex; gap: 2px; margin-top: 4px; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border); }
+  .dot.filled { background: var(--accent); }
+
+  /* Stats grid */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+  }
+  .stat {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .stat-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+  }
+  .stat-value { font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+  /* Sessions list */
+  .module {
+    margin-bottom: 24px;
+  }
+  .module-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border-strong);
+    margin-bottom: 4px;
+  }
+  .module-title { font-weight: 600; font-size: 14px; }
+  .module-meta { font-size: 11px; color: var(--muted); }
+  .session-row {
+    display: grid;
+    grid-template-columns: 28px 1fr auto;
+    gap: 12px;
+    align-items: center;
+    padding: 9px 8px;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  .session-row:hover { background: var(--code-bg); }
+  .session-row.done .session-title { color: var(--muted); }
+  .session-row.next { background: var(--accent-soft); }
+  .session-row.next .session-num { color: var(--accent); font-weight: 600; }
+  .session-num { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; text-align: right; }
+  .session-title { font-size: 13px; }
+  .session-status {
+    font-size: 11px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .check {
+    width: 14px;
+    height: 14px;
+    border: 1.5px solid var(--border-strong);
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .check.done {
+    background: var(--done);
+    border-color: var(--done);
+    position: relative;
+  }
+  .check.done::after {
+    content: "✓";
+    color: white;
+    font-size: 10px;
+    position: absolute;
+    top: -3px;
+    left: 1.5px;
+  }
+
+  /* Session detail */
+  .session-body {
+    line-height: 1.7;
+  }
+  .session-body p { margin: 0 0 12px; }
+  .session-body ul, .session-body ol { margin: 8px 0 14px; padding-left: 22px; }
+  .session-body li { margin: 4px 0; }
+  .session-body strong { font-weight: 600; color: var(--text); }
+  .session-body hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+
+  .actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 24px;
+  }
+  button {
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    color: var(--text);
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  button:hover { background: var(--code-bg); }
+  button.primary {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }
+  button.primary:hover { opacity: 0.9; background: var(--accent); }
+
+  /* Learn-with-AI button — distinctive gradient */
+  button.btn-ai {
+    background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 50%, #06b6d4 100%);
+    color: white;
+    border-color: transparent;
+    font-weight: 600;
+  }
+  button.btn-ai:hover { opacity: 0.92; background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 50%, #06b6d4 100%); }
+  button.btn-ai.compact {
+    padding: 3px 8px;
+    font-size: 11px;
+    border-radius: 4px;
+  }
+
+  /* AI launch banner on session page */
+  .ai-launch {
+    margin: 16px 0 20px;
+    padding: 14px 16px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, rgba(139,92,246,0.10) 0%, rgba(59,130,246,0.10) 50%, rgba(6,182,212,0.10) 100%);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .ai-launch .ai-copy { flex: 1; min-width: 200px; }
+  .ai-launch .ai-copy strong { display: block; font-size: 14px; margin-bottom: 2px; }
+  .ai-launch .ai-copy span { font-size: 12px; color: var(--muted); }
+
+  /* Toast for clipboard confirmation */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--text);
+    color: var(--bg);
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
+
+  /* Notes textarea */
+  textarea {
+    width: 100%;
+    min-height: 90px;
+    border: 1px solid var(--border-strong);
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-family: inherit;
+    font-size: 13px;
+    background: var(--surface);
+    color: var(--text);
+    resize: vertical;
+  }
+  textarea:focus { outline: 2px solid var(--accent-soft); outline-offset: -1px; }
+
+  /* Library */
+  .library-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+  }
+  .lib-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+  }
+  .lib-kind {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .lib-title { font-weight: 500; margin: 4px 0 8px; font-size: 14px; }
+  .lib-tags { font-size: 11px; color: var(--muted); }
+
+  /* Resources */
+  .resource-list {
+    display: flex;
+    flex-direction: column;
+  }
+  .resource-row {
+    display: grid;
+    grid-template-columns: 60px 1fr;
+    gap: 14px;
+    padding: 10px 0;
+    align-items: baseline;
+  }
+  .resource-row + .resource-row { border-top: 1px solid var(--border); }
+  .resource-kind {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    font-weight: 600;
+    padding: 2px 6px;
+    background: var(--code-bg);
+    border-radius: 3px;
+    text-align: center;
+    display: inline-block;
+    width: fit-content;
+  }
+  .resource-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .resource-title { font-weight: 500; font-size: 13px; }
+  .resource-note { font-size: 12px; color: var(--muted); }
+
+  /* Milestones */
+  .milestone-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 16px;
+  }
+  .milestone {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+  }
+  .milestone .check { border-radius: 3px; }
+  .milestone.done { color: var(--muted); text-decoration: line-through; }
+
+  .empty {
+    color: var(--muted);
+    font-style: italic;
+    font-size: 13px;
+  }
+
+  /* Pending sync banner */
+  .sync-banner {
+    background: var(--warn);
+    color: #1c1917;
+    padding: 12px 18px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 13px;
+  }
+  /* Yellow banner needs dark text in both dark themes. */
+  [data-theme="dark"] .sync-banner { color: #1c1917; }
+  @media (prefers-color-scheme: dark) {
+    [data-theme="auto"] .sync-banner { color: #1c1917; }
+  }
+  .sync-banner-actions { display: flex; gap: 8px; }
+  .sync-banner button {
+    background: rgba(0,0,0,0.12);
+    border: 1px solid rgba(0,0,0,0.18);
+    color: inherit;
+    font-weight: 500;
+  }
+  .sync-banner button:hover { background: rgba(0,0,0,0.2); }
+
+  /* Modal */
+  .modal-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 100;
+    padding: 20px;
+  }
+  .modal {
+    background: var(--surface);
+    border-radius: 10px;
+    max-width: 640px;
+    width: 100%;
+    max-height: 80vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .modal-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .modal-header h3 { margin: 0; font-size: 15px; }
+  .modal-body { padding: 16px 20px; overflow-y: auto; }
+  .modal-footer {
+    padding: 12px 20px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+  .modal pre {
+    max-height: 320px;
+    overflow: auto;
+    user-select: all;
+  }
+  .close-x {
+    background: transparent;
+    border: none;
+    font-size: 22px;
+    cursor: pointer;
+    color: var(--muted);
+    padding: 0 4px;
+  }
+
+  /* Mark complete button on session row */
+  .session-row .row-actions {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+  /* Non-AI actions hide unless row is next or hovered */
+  .session-row .row-actions > button:not(.btn-ai) {
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .session-row:hover .row-actions > button:not(.btn-ai),
+  .session-row.next .row-actions > button:not(.btn-ai) { opacity: 1; }
+  .session-row.done .row-actions > button:not(.btn-ai) { opacity: 0; }
+  /* AI button always visible, slightly dimmed until hover */
+  .session-row .row-actions .btn-ai.compact { opacity: 0.75; }
+  .session-row:hover .row-actions .btn-ai.compact { opacity: 1; }
+  .row-actions button {
+    padding: 3px 8px;
+    font-size: 11px;
+    border-radius: 4px;
+  }
+
+  /* Pending pill on session */
+  .session-row.pending {
+    background: rgba(180, 83, 9, 0.08);
+  }
+  .session-row.pending .session-status::before {
+    content: "⟳ pending sync ";
+    color: var(--warn);
+    font-size: 11px;
+  }
+
+  /* ─── Track map view ─────────────────────────────────────────── */
+  .map-legend {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .map-legend-item { display: flex; align-items: center; gap: 6px; }
+  .map-cell {
+    width: 12px; height: 12px;
+    border-radius: 2px;
+    display: inline-block;
+    flex-shrink: 0;
+  }
+  .map-cell.done    { background: var(--accent); }
+  .map-cell.pending { background: var(--warn); }
+  .map-cell.next    { background: var(--accent-soft); border: 1.5px solid var(--accent); width: 9px; height: 9px; }
+  .map-cell.todo    { background: var(--border); }
+
+  .map-scroller {
+    overflow-x: auto;
+    margin: 0 -8px;
+    padding: 0 8px 8px;
+  }
+  .map-track {
+    display: grid;
+    grid-template-columns: 60px 1fr 80px;
+    gap: 16px;
+    align-items: center;
+    padding: 12px 0;
+    min-width: max-content;
+  }
+  .map-track + .map-track { border-top: 1px solid var(--border); }
+  .map-track-label {
+    font-weight: 600;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+  .map-track-letter {
+    font-size: 11px;
+    color: var(--muted);
+    margin-right: 6px;
+  }
+  .map-track-pct {
+    font-size: 12px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+  }
+  .map-modules {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    min-width: 0;
+  }
+  .map-module {
+    display: flex;
+    gap: 3px;
+    padding: 4px 6px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--bg);
+    position: relative;
+  }
+  .map-module:hover { border-color: var(--border-strong); }
+  .map-cell-link {
+    cursor: pointer;
+    transition: transform 0.12s;
+  }
+  .map-cell-link:hover {
+    transform: scale(1.4);
+    box-shadow: 0 0 0 2px var(--surface), 0 0 0 3px var(--accent);
+    z-index: 2;
+  }
+
+  /* Tooltip */
+  [data-tip] { position: relative; }
+  [data-tip]:hover::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--text);
+    color: var(--bg);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    white-space: nowrap;
+    z-index: 10;
+    pointer-events: none;
+  }
+
+  /* ─── Gamification ────────────────────────────────────────────── */
+  .rank-card {
+    display: grid;
+    grid-template-columns: 80px 1fr auto;
+    gap: 20px;
+    align-items: center;
+  }
+  .rank-emblem {
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-soft) 100%);
+    color: var(--surface);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px;
+    font-weight: 700;
+    font-family: "JetBrains Mono", monospace;
+    box-shadow: 0 4px 12px rgba(15, 118, 110, 0.2);
+  }
+  .rank-info { display: flex; flex-direction: column; gap: 4px; }
+  .rank-level {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  .rank-name {
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .rank-progress {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 6px;
+  }
+  .rank-progress-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .rank-xp {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  .rank-xp-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .rank-xp-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    font-weight: 600;
+    margin-top: 2px;
+  }
+
+  .badge-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 12px;
+  }
+  .badge {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    text-align: center;
+    transition: transform 0.15s, border-color 0.15s;
+    position: relative;
+  }
+  .badge.earned {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+  }
+  .badge:not(.earned) {
+    opacity: 0.55;
+  }
+  .badge:not(.earned) .badge-icon {
+    filter: grayscale(1);
+  }
+  .badge:hover { transform: translateY(-2px); }
+  .badge.earned:hover { border-color: var(--accent); }
+  .badge-icon { font-size: 28px; line-height: 1; }
+  .badge-name { font-size: 12px; font-weight: 600; }
+  .badge-desc { font-size: 11px; color: var(--muted); line-height: 1.4; }
+  .badge-progress {
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 4px;
+  }
+  .badge-progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+  .badge.earned .badge-progress { display: none; }
+  .badge-earned-tag {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    background: var(--accent);
+    color: white;
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 700;
+  }
+
+  .badge-group {
+    margin-bottom: 18px;
+  }
+  .badge-group-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    font-weight: 600;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .streak-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+  }
+
+  /* Mini-map (dashboard summary) */
+  .minimap-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+  .minimap-row {
+    display: grid;
+    grid-template-columns: 180px minmax(0, 1fr);
+    gap: 14px;
+    align-items: center;
+    padding: 6px 0;
+  }
+  .minimap-row + .minimap-row { border-top: 1px solid var(--border); }
+  .minimap-row .map-track-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 12px;
+    line-height: 1.3;
+  }
+  .minimap-cells {
+    display: flex;
+    gap: 3px;
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+  .minimap-cells .map-cell { width: 10px; height: 10px; }
+
+  /* ─── Responsive: hamburger + backdrop (mobile only) ─────────── */
+  .mobile-topbar {
+    display: none;
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 14px;
+    align-items: center;
+    gap: 12px;
+  }
+  .mobile-topbar .menu-btn {
+    appearance: none;
+    background: transparent;
+    border: 1px solid var(--border-strong);
+    border-radius: 6px;
+    color: var(--text);
+    font: inherit;
+    font-size: 18px;
+    width: 36px;
+    height: 36px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .mobile-topbar .brand-mini {
+    font-weight: 600;
+    font-size: 13px;
+  }
+  .mobile-topbar .brand-mini .sub {
+    color: var(--muted);
+    font-weight: 400;
+    margin-left: 6px;
+    font-size: 11px;
+  }
+  .sidebar-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 40;
+  }
+  body.sidebar-open .sidebar-backdrop { display: block; }
+  body.sidebar-open { overflow: hidden; }
+
+  /* ─── Desktop sidebar collapse ───────────────────────────────── */
+  body.sidebar-collapsed .app { grid-template-columns: 1fr; }
+  body.sidebar-collapsed nav.sidebar { display: none; }
+  body.sidebar-collapsed main { padding-left: 80px; }
+  @media (max-width: 720px) {
+    body.sidebar-collapsed main { padding-left: 16px; }
+    body.sidebar-collapsed .sidebar-reopen { display: none; }
+  }
+
+  /* ─── ≤ 980px : tighter desktop ───────────────────────────────── */
+  @media (max-width: 980px) {
+    .app { grid-template-columns: 200px 1fr; }
+    body.sidebar-collapsed .app { grid-template-columns: 1fr; }
+    nav.sidebar { padding: 20px 12px; }
+    main { padding: 32px 28px 64px; }
+    .week-grid, .stats-grid { grid-template-columns: repeat(4, 1fr); }
+    section.card { padding: 18px 20px; }
+  }
+
+  /* ─── ≤ 720px : mobile / off-canvas sidebar ──────────────────── */
+  @media (max-width: 720px) {
+    .app { grid-template-columns: 1fr; }
+    .mobile-topbar { display: flex; }
+    nav.sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 260px;
+      max-width: 80vw;
+      height: 100vh;
+      transform: translateX(-100%);
+      transition: transform 0.22s ease;
+      z-index: 50;
+      border-right: 1px solid var(--border);
+      box-shadow: 4px 0 16px rgba(0,0,0,0.18);
+    }
+    body.sidebar-open nav.sidebar { transform: translateX(0); }
+    main { padding: 20px 16px 60px; max-width: 100%; }
+    h1 { font-size: 19px; }
+    .week-grid, .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .milestone-list { grid-template-columns: 1fr; }
+    .track-row { grid-template-columns: 1fr 56px; gap: 6px 12px; }
+    .track-row .bar { grid-column: 1 / -1; }
+    .track-row .pct { grid-column: 2; text-align: right; }
+    .stat-grid-2 { grid-template-columns: 1fr !important; }
+    .badge-grid { grid-template-columns: repeat(2, 1fr) !important; }
+    .week-cell { padding: 8px 10px; }
+    section.card { padding: 16px 16px; border-radius: 8px; }
+
+    /* ─── Mini-map (dashboard) ─── stack label over cells */
+    .minimap-row {
+      grid-template-columns: 1fr;
+      gap: 6px;
+      padding: 8px 0;
+    }
+    .minimap-row + .minimap-row { border-top: 1px solid var(--border); }
+    .minimap-cells { gap: 3px; }
+    .minimap-cells .map-cell { width: 11px; height: 11px; }
+    .map-track-label { font-size: 13px; font-weight: 600; }
+
+    /* ─── Full Track Map ─── drop horizontal scroll, stack rows */
+    .map-scroller { overflow-x: visible; margin: 0; padding: 0; }
+    .map-track {
+      grid-template-columns: 1fr auto;
+      grid-template-areas:
+        "label pct"
+        "modules modules";
+      gap: 8px 12px;
+      min-width: 0;
+      padding: 14px 0;
+    }
+    .map-track-label { grid-area: label; font-size: 14px; }
+    .map-track-pct   { grid-area: pct; }
+    .map-modules {
+      grid-area: modules;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .map-module { gap: 4px; padding: 5px 7px; }
+    .map-cell { width: 14px; height: 14px; }
+    .map-cell.next { width: 11px; height: 11px; }
+    .map-cell-link:hover { transform: none; box-shadow: none; }
+
+    /* legend wraps and stays readable */
+    .map-legend { font-size: 10px; gap: 10px; }
+    .map-legend-hint { display: none; }
+  }
+
+  /* ─── ≤ 480px : compact phone ─────────────────────────────────── */
+  @media (max-width: 480px) {
+    main { padding: 16px 12px 56px; }
+    h1 { font-size: 17px; }
+    h3 { font-size: 14px; }
+    section.card { padding: 14px 14px; margin-bottom: 12px; }
+    .week-grid { grid-template-columns: 1fr 1fr; }
+    .badge-grid { grid-template-columns: 1fr !important; }
+    .minimap-cells .map-cell { width: 12px; height: 12px; }
+    .map-cell { width: 16px; height: 16px; }
+    .map-cell.next { width: 13px; height: 13px; }
+  }
+</style>
+</head>
+<body>
+<header class="mobile-topbar">
+  <button class="menu-btn" id="menu-btn" aria-label="Open menu" aria-expanded="false">☰</button>
+  <div class="brand-mini">Forge<span class="sub">SE Upskilling Platform</span></div>
+</header>
+<div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+<button class="sidebar-reopen" id="sidebar-reopen" aria-label="Open sidebar" title="Open sidebar">☰</button>
+
+<div class="app">
+
+  <nav class="sidebar">
+    <div class="brand">
+      <div class="brand-text">
+        <svg class="brand-icon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M3 8 L21 8 L18 12 L6 12 Z"/>
+          <rect x="10" y="12" width="4" height="6"/>
+          <rect x="7" y="18" width="10" height="2" rx="0.5"/>
+        </svg>
+        <div class="brand-text-inner">
+          Forge
+          <span class="sub">SE Upskilling Platform</span>
+        </div>
+      </div>
+      <button class="sidebar-toggle" id="sidebar-collapse" aria-label="Collapse sidebar" title="Collapse sidebar">«</button>
+    </div>
+
+    <div class="nav-section">Overview</div>
+    <a class="nav-item" data-route="dashboard"><span>📊 Dashboard</span></a>
+    <a class="nav-item" data-route="map"><span>🗺️ Track Map</span></a>
+    <a class="nav-item" data-route="achievements"><span>🏅 Achievements</span></a>
+    <a class="nav-item" data-route="library"><span>📚 Library</span></a>
+
+    <div class="nav-section">Tracks</div>
+    <div id="nav-tracks"></div>
+
+    <div class="seg-label">Learning mode</div>
+    <div class="seg-toggle" role="group" aria-label="Learning mode">
+      <button data-mode-set="upskilling" title="Self upskilling — depth, exploration, build understanding"><span class="icon">📚</span><span class="label">Upskill</span></button>
+      <button data-mode-set="interview"  title="Interview-focused — mock interviews, time pressure, signal"><span class="icon">🎯</span><span class="label">Interview</span></button>
+    </div>
+
+    <div class="seg-label">Theme</div>
+    <div class="seg-toggle" role="group" aria-label="Theme">
+      <button data-theme-set="light"  title="Light mode"><span class="icon">☀</span><span class="label">Light</span></button>
+      <button data-theme-set="auto"   title="Match system"><span class="icon">◐</span><span class="label">Auto</span></button>
+      <button data-theme-set="dark"   title="Dark mode"><span class="icon">☾</span><span class="label">Dark</span></button>
+    </div>
+  </nav>
+
+  <main id="main"></main>
+
+</div>
+
+<script src="dashboard/tracks.js"></script>
+<script src="dashboard/resources.js"></script>
+<script src="dashboard/data.js"></script>
+<script src="dashboard/gamification.js"></script>
+<script>
+// ─── ROUTER ───────────────────────────────────────────────────────────
+const ROUTES = {
+  "dashboard":    renderDashboard,
+  "map":          renderMap,
+  "achievements": renderAchievements,
+  "library":      renderLibrary,
+  "track":        renderTrack,    // #/track/A
+  "session":      renderSession   // #/session/A/1
+};
+
+function parseHash() {
+  const h = (location.hash || "#/dashboard").slice(2);
+  const parts = h.split("/").filter(Boolean);
+  return { name: parts[0] || "dashboard", args: parts.slice(1) };
+}
+
+function navigate() {
+  const { name, args } = parseHash();
+  const fn = ROUTES[name] || renderDashboard;
+  fn(...args);
+  document.querySelectorAll(".nav-item").forEach(el => {
+    el.classList.toggle("active", el.dataset.route === name && (!args.length || el.dataset.arg === args[0]));
+  });
+  window.scrollTo(0, 0);
+}
+
+window.addEventListener("hashchange", navigate);
+
+// ─── HELPERS ──────────────────────────────────────────────────────────
+const $ = (sel, root = document) => root.querySelector(sel);
+const main = () => $("#main");
+
+function track(letter) { return window.TRACKS.find(t => t.letter === letter); }
+function annKey(letter, n) { return `${letter}-${n}`; }
+
+// ─── PENDING OVERLAY (localStorage) ───────────────────────────────────
+// User-side completions that haven't been synced to PROGRESS.md yet.
+// Shape: { "A-1": { completedAt: "2026-06-26T...", durationMin: null } }
+const OVERLAY_KEY = "learning.pendingCompletions";
+
+function loadPending() {
+  try { return JSON.parse(localStorage.getItem(OVERLAY_KEY) || "{}"); }
+  catch { return {}; }
+}
+function savePending(p) {
+  localStorage.setItem(OVERLAY_KEY, JSON.stringify(p));
+  window.PENDING = p;
+}
+let PENDING = loadPending();
+window.PENDING = PENDING; // expose for gamification.js
+
+function isPending(letter, n) { return !!PENDING[annKey(letter, n)]; }
+function pendingCount() { return Object.keys(PENDING).length; }
+
+function isDone(letter, n) {
+  // Persisted via PROGRESS.md → data.js
+  if ((window.PROGRESS.currentSession[letter] || 1) > n) return true;
+  // Or marked done in the UI, awaiting sync
+  return isPending(letter, n);
+}
+
+function markComplete(letter, n) {
+  if (isDone(letter, n)) return;
+  PENDING[annKey(letter, n)] = {
+    completedAt: new Date().toISOString(),
+    durationMin: null
+  };
+  savePending(PENDING);
+  navigate(); // re-render current view
+}
+
+function unmarkPending(letter, n) {
+  delete PENDING[annKey(letter, n)];
+  savePending(PENDING);
+  navigate();
+}
+
+// ─── LEARN WITH AI ────────────────────────────────────────────────────
+const MODE_KEY = "learning.mode";
+const MODES = {
+  upskilling: {
+    label: "Upskill", icon: "📚", short: "Self upskilling",
+    tagline: "Depth over speed. The AI becomes a patient tutor.",
+    expect: [
+      "Socratic walkthrough — concepts introduced one at a time, with pauses for checking questions.",
+      "Worked examples with reasoning narrated out loud (trade-offs, why this not that).",
+      "An exercise for you to attempt before the answer is revealed — hints first, not solutions.",
+      "Connects each idea to where it shows up in real systems and adjacent concepts.",
+      "Wrap-up of 3-5 takeaways and what to revisit if still shaky."
+    ],
+    bestFor: "Building durable understanding when you have time to explore."
+  },
+  interview: {
+    label: "Interview", icon: "🎯", short: "Interview prep",
+    tagline: "Signal over comfort. The AI becomes a Google L5/L6 interviewer.",
+    expect: [
+      "Problem is posed interview-style — no setup, no hints, you think out loud.",
+      "Interviewer pushback: \"why that data structure?\", \"how does this scale 100x?\", \"what breaks first?\".",
+      "Time-aware — tells you if you're on pace for a real 45-min loop.",
+      "Honest debrief at the end, including what would be a no-hire signal at L5.",
+      "Model answer shown for comparison + one follow-up + one rapid-fire variant."
+    ],
+    bestFor: "Pressure-testing knowledge close to interview time."
+  }
+};
+function getMode() {
+  const m = localStorage.getItem(MODE_KEY);
+  return MODES[m] ? m : "upskilling";
+}
+function setMode(m) {
+  if (!MODES[m]) m = "upskilling";
+  localStorage.setItem(MODE_KEY, m);
+}
+
+function upskillingPromptBody() {
+  return [
+    `**Mode: Self-upskilling.** Goal is durable understanding, not interview signal. Take your time, prioritise depth over speed.`,
+    ``,
+    `Please run this session with me using the following structure:`,
+    ``,
+    `1. **Frame it** — In 3-5 sentences, tell me what I'm about to learn and why it matters at the L5 level. What's the mental model?`,
+    `2. **Teach the core concepts** — Walk me through the key ideas one at a time. Use concrete examples and small code snippets (Java preferred for DSA/systems, Go for cloud/concurrency, language-agnostic otherwise). After each concept, pause and ask me a checking question before moving on.`,
+    `3. **Worked example** — Do one fully worked example end-to-end, narrating your reasoning out loud (trade-offs, why this approach over alternatives, what would go wrong otherwise).`,
+    `4. **My turn** — Give me a short exercise or problem I can attempt on my own, then wait for my answer before showing yours. If I get stuck, give a hint first, not the solution.`,
+    `5. **Connect the dots** — Show me how this idea connects to related concepts and where it shows up in real systems / production code.`,
+    `6. **Wrap-up** — Summarize the 3-5 things I should remember from this session, and flag what to revisit if I'm still shaky.`,
+    ``,
+    `Be Socratic, not lecture-mode. Don't dump everything at once. Wait for my responses between steps. Assume I have ~5 years of SWE experience.`,
+    ``,
+    `Ready when you are — start with step 1.`
+  ].join("\n");
+}
+
+function interviewPromptBody() {
+  return [
+    `**Mode: Interview-focused prep.** Goal is interview signal — speed, clarity under pressure, pattern recognition, and the ability to talk through trade-offs out loud. Act like a Google L5/L6 interviewer, not a tutor.`,
+    ``,
+    `Please run this session with me using the following structure:`,
+    ``,
+    `1. **Pose the problem / scenario** — Pick the most interview-realistic question from this session (a coding problem, a design problem, or a behavioral STAR scenario depending on the track). State the prompt the way an interviewer would, without giving away the approach.`,
+    `2. **Wait for me** — Let me think out loud. Don't reveal anything. If I stall for too long, give one small nudge in the form of a clarifying question an interviewer might ask (\"what's the input size?\", \"what happens if X fails?\"), not a hint.`,
+    `3. **Probe** — As I respond, push back like an interviewer: \"why that data structure?\", \"what's the complexity?\", \"how does this scale to 100x?\", \"what breaks first?\". For system design: drill on bottlenecks, failure modes, consistency. For DSA: edge cases, complexity, alternative approaches.`,
+    `4. **Time check** — Tell me roughly how long this would take in a real interview and whether I'm tracking on pace.`,
+    `5. **Score me** — At the end, give me an interviewer-style debrief: what I did well (the signals an interviewer would write down: problem-solving, communication, depth, code quality), what was weak, and what would cause a no-hire at L5. Be honest, not gentle.`,
+    `6. **Model answer** — Show what a strong L5 candidate's answer looks like for comparison. Highlight the 2-3 things that made it strong.`,
+    `7. **Next** — Give me one follow-up question an interviewer would ask if I aced the first one, and one rapid-fire variant I can drill on my own.`,
+    ``,
+    `Be direct and time-aware. Don't lecture; interview me. Assume I have ~5 years of SWE experience and am targeting Google L5.`,
+    ``,
+    `Ready when you are — start with step 1 (the problem).`
+  ].join("\n");
+}
+
+function buildAIPrompt(letter, n) {
+  const t = track(letter);
+  if (!t) return "";
+  const session = t.modules.flatMap(m => m.sessions).find(s => s.n === n);
+  const module = t.modules.find(m => m.sessions.some(s => s.n === n));
+  if (!session) return "";
+
+  const trackName = t.title.replace(/^Track\s+[A-H]\s+[—-]\s+/, "");
+  const mode = getMode();
+  const modeBody = mode === "interview" ? interviewPromptBody() : upskillingPromptBody();
+
+  return [
+    `I'm working through "Forge" — my SE Upskilling Platform (Google L5 prep).`,
+    ``,
+    `**Track:** ${letter} — ${trackName}`,
+    `**Module:** ${module.title}`,
+    `**Session ${session.n}:** ${session.title}`,
+    ``,
+    `**Session brief (from my curriculum):**`,
+    ``,
+    session.body,
+    ``,
+    `---`,
+    ``,
+    modeBody
+  ].join("\n");
+}
+
+function showToast(msg, ms = 2200) {
+  let el = document.getElementById("toast");
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "toast";
+    el.className = "toast";
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  requestAnimationFrame(() => el.classList.add("show"));
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove("show"), ms);
+}
+
+function copyTextToClipboard(text) {
+  if (navigator.clipboard && window.isSecureContext) {
+    return navigator.clipboard.writeText(text);
+  }
+  // file:// fallback
+  return new Promise((resolve, reject) => {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand("copy"); resolve(); }
+    catch (e) { reject(e); }
+    finally { document.body.removeChild(ta); }
+  });
+}
+
+function closeAIModal() {
+  const m = document.getElementById("ai-modal-wrap");
+  if (m) m.remove();
+}
+
+function closeModeInfoModal() {
+  const m = document.getElementById("mode-info-modal-wrap");
+  if (m) m.remove();
+}
+
+function openModeInfoModal(modeKey) {
+  closeModeInfoModal();
+  const m = MODES[modeKey];
+  if (!m) return;
+  const items = m.expect.map(line => `<li>${esc(line)}</li>`).join("");
+  const html = `
+    <div class="modal-backdrop" onclick="if(event.target===this) closeModeInfoModal()">
+      <div class="modal">
+        <div class="modal-header">
+          <h3>${m.icon} Switched to ${esc(m.short)} mode</h3>
+          <button class="close-x" onclick="closeModeInfoModal()">×</button>
+        </div>
+        <div class="modal-body">
+          <p style="margin-top:0; font-size:14px;"><em>${esc(m.tagline)}</em></p>
+          <p style="margin:14px 0 6px;"><strong>What to expect when you hit "Learn with AI":</strong></p>
+          <ul style="margin-top:6px;">${items}</ul>
+          <p style="margin-top:14px; color: var(--muted); font-size: 12px;"><strong>Best for:</strong> ${esc(m.bestFor)}</p>
+          <p style="margin-top:8px; color: var(--muted); font-size: 12px;">You can switch back any time from the sidebar.</p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-ai" onclick="closeModeInfoModal()">Got it</button>
+        </div>
+      </div>
+    </div>`;
+  const wrap = document.createElement("div");
+  wrap.id = "mode-info-modal-wrap";
+  wrap.innerHTML = html;
+  document.body.appendChild(wrap);
+}
+
+function copyAIPrompt() {
+  const text = document.getElementById("ai-prompt-text")?.textContent || "";
+  copyTextToClipboard(text).then(
+    () => {
+      const btn = document.getElementById("ai-copy-btn");
+      if (btn) {
+        const orig = btn.textContent;
+        btn.textContent = "✓ Copied";
+        setTimeout(() => { btn.textContent = orig; }, 1800);
+      }
+    },
+    () => showToast("Couldn't copy — select the text manually")
+  );
+}
+
+function learnWithAI(letter, n) {
+  const prompt = buildAIPrompt(letter, n);
+  if (!prompt) return;
+
+  // pre-copy so the user can paste immediately if they hit "Open Gemini"
+  copyTextToClipboard(prompt).catch(() => {});
+
+  const t = track(letter);
+  const session = t?.modules.flatMap(m => m.sessions).find(s => s.n === n);
+  const subtitle = `${letter}-${n} · ${esc(session?.title || "")}`;
+
+  const html = `
+    <div class="modal-backdrop" onclick="if(event.target===this) closeAIModal()">
+      <div class="modal">
+        <div class="modal-header">
+          <h3>✨ Learn with AI — ${subtitle}<span class="mode-chip">${MODES[getMode()].icon} ${esc(MODES[getMode()].short)}</span></h3>
+          <button class="close-x" onclick="closeAIModal()">×</button>
+        </div>
+        <div class="modal-body">
+          <p style="margin-top:0;">The prompt below is already <strong>copied to your clipboard</strong>. Open your favourite AI tool and paste it into the chat box.</p>
+          <ol style="margin-top:8px;">
+            <li>Open your favourite AI tool in a new tab.</li>
+            <li>Paste (<code>⌘V</code> / <code>Ctrl-V</code>) into its chat.</li>
+            <li>Send — it'll tutor you through this session step-by-step.</li>
+          </ol>
+          <p style="margin:14px 0 6px;"><strong>Prompt preview:</strong></p>
+          <pre id="ai-prompt-text">${esc(prompt)}</pre>
+        </div>
+        <div class="modal-footer">
+          <button onclick="closeAIModal()">Close</button>
+          <button id="ai-copy-btn" class="btn-ai" onclick="copyAIPrompt()">Copy again</button>
+        </div>
+      </div>
+    </div>`;
+  const wrap = document.createElement("div");
+  wrap.id = "ai-modal-wrap";
+  wrap.innerHTML = html;
+  document.body.appendChild(wrap);
+}
+
+function clearAllPending() {
+  PENDING = {};
+  savePending(PENDING);
+  navigate();
+}
+
+function openSyncModal() {
+  const payload = buildSyncPayload();
+  const text = JSON.stringify(payload, null, 2);
+  const list = payload.completions.map(c => {
+    const t = track(c.track);
+    const sess = t?.modules.flatMap(m => m.sessions).find(s => s.n === c.session);
+    return `<li><code>${c.track}-${c.session}</code> — ${esc(sess?.title || "")}</li>`;
+  }).join("");
+
+  const html = `
+    <div class="modal-backdrop" onclick="if(event.target===this) closeSyncModal()">
+      <div class="modal">
+        <div class="modal-header">
+          <h3>Sync ${payload.completions.length} completion${payload.completions.length>1?"s":""} to terminal</h3>
+          <button class="close-x" onclick="closeSyncModal()">×</button>
+        </div>
+        <div class="modal-body">
+          <p style="margin-top:0;">Pending:</p>
+          <ul>${list}</ul>
+          <p><strong>How to sync:</strong></p>
+          <ol>
+            <li>Click <strong>Copy payload</strong> below.</li>
+            <li>In the terminal, run <code>/sync</code> and paste the JSON when prompted.</li>
+            <li>Claude updates <code>PROGRESS.md</code> + <code>dashboard/data.js</code>, then reload this tab.</li>
+          </ol>
+          <pre id="sync-payload">${esc(text)}</pre>
+        </div>
+        <div class="modal-footer">
+          <button onclick="closeSyncModal()">Cancel</button>
+          <button class="primary" onclick="copySyncPayload()">Copy payload</button>
+        </div>
+      </div>
+    </div>`;
+  const wrap = document.createElement("div");
+  wrap.id = "modal-wrap";
+  wrap.innerHTML = html;
+  document.body.appendChild(wrap);
+}
+
+function closeSyncModal() {
+  const m = document.getElementById("modal-wrap");
+  if (m) m.remove();
+}
+
+function copySyncPayload() {
+  const text = document.getElementById("sync-payload")?.textContent || "";
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.querySelector("#modal-wrap .modal-footer .primary");
+    if (btn) {
+      const orig = btn.textContent;
+      btn.textContent = "✓ Copied — paste in terminal";
+      setTimeout(() => { btn.textContent = orig; }, 2000);
+    }
+  });
+}
+
+function buildSyncPayload() {
+  const today = new Date().toISOString().slice(0, 10);
+  const entries = Object.entries(PENDING)
+    .map(([key, meta]) => {
+      const [letter, nStr] = key.split("-");
+      return {
+        track: letter,
+        session: parseInt(nStr, 10),
+        completedAt: meta.completedAt,
+        date: meta.completedAt.slice(0, 10) || today
+      };
+    })
+    .sort((a, b) => a.completedAt.localeCompare(b.completedAt));
+  return {
+    kind: "learning-sync-v1",
+    generatedAt: new Date().toISOString(),
+    completions: entries
+  };
+}
+
+function pct(done, total) { return total ? Math.round(done / total * 100) : 0; }
+
+function bar(percent) {
+  return `<div class="bar"><div class="bar-fill" style="width:${percent}%"></div></div>`;
+}
+
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+}
+
+// Lightweight markdown → HTML for session bodies.
+// Handles: bold, italic, inline code, links, headers, lists, code blocks.
+function md2html(md) {
+  if (!md) return "";
+  // code blocks first
+  md = md.replace(/```([\s\S]*?)```/g, (_, code) => `<pre><code>${esc(code.trim())}</code></pre>`);
+  const lines = md.split("\n");
+  const out = [];
+  let inList = null; // "ul" or "ol"
+  for (let raw of lines) {
+    const line = raw.trimEnd();
+    if (!line.trim()) { if (inList) { out.push(`</${inList}>`); inList = null; } out.push(""); continue; }
+    // horizontal rule
+    if (/^---+$/.test(line.trim())) { if (inList) { out.push(`</${inList}>`); inList = null; } out.push("<hr>"); continue; }
+    // headers (within session body — rare)
+    const h = line.match(/^(#{1,4})\s+(.*)$/);
+    if (h) { if (inList) { out.push(`</${inList}>`); inList = null; } out.push(`<h${h[1].length+2}>${inline(h[2])}</h${h[1].length+2}>`); continue; }
+    // unordered list
+    if (/^[-*]\s+/.test(line)) {
+      if (inList !== "ul") { if (inList) out.push(`</${inList}>`); out.push("<ul>"); inList = "ul"; }
+      out.push(`<li>${inline(line.replace(/^[-*]\s+/, ""))}</li>`);
+      continue;
+    }
+    // ordered list
+    if (/^\d+\.\s+/.test(line)) {
+      if (inList !== "ol") { if (inList) out.push(`</${inList}>`); out.push("<ol>"); inList = "ol"; }
+      out.push(`<li>${inline(line.replace(/^\d+\.\s+/, ""))}</li>`);
+      continue;
+    }
+    if (inList) { out.push(`</${inList}>`); inList = null; }
+    if (line.startsWith("<pre>") || line.startsWith("</pre>")) { out.push(line); continue; }
+    out.push(`<p>${inline(line)}</p>`);
+  }
+  if (inList) out.push(`</${inList}>`);
+  return out.join("\n");
+
+  function inline(s) {
+    s = esc(s);
+    s = s.replace(/`([^`]+)`/g, "<code>$1</code>");
+    s = s.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+    s = s.replace(/\*([^*]+)\*/g, "<em>$1</em>");
+    s = s.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, t, u) => `<a href="${u}" target="_blank" rel="noopener">${t}</a>`);
+    return s;
+  }
+}
+
+// ─── SIDEBAR ──────────────────────────────────────────────────────────
+function renderSidebar() {
+  const el = $("#nav-tracks");
+  el.innerHTML = "";
+  for (const t of window.TRACKS) {
+    const cur = window.PROGRESS.currentSession[t.letter] || 1;
+    const done = cur - 1;
+    const a = document.createElement("a");
+    a.className = "nav-item";
+    a.dataset.route = "track";
+    a.dataset.arg = t.letter;
+    a.href = `#/track/${t.letter}`;
+    const shortName = t.title.replace(/^Track\s+[A-H]\s*[—-]\s*/, "").replace(/\s*\(.*\)$/, "").split("(")[0].trim();
+    a.innerHTML = `
+      <span class="nav-item-label">
+        <span class="nav-letter">${t.letter}</span>
+        <span class="nav-text">${shortName}</span>
+      </span>
+      <span class="nav-count">${done}/${t.totalSessions}</span>
+    `;
+    el.appendChild(a);
+  }
+  document.querySelectorAll(".nav-item").forEach(el => {
+    if (!el.dataset.route) return;
+    if (el.dataset.route === "dashboard") el.href = "#/dashboard";
+    else if (el.dataset.route === "map") el.href = "#/map";
+    else if (el.dataset.route === "achievements") el.href = "#/achievements";
+    else if (el.dataset.route === "library") el.href = "#/library";
+  });
+}
+
+// ─── VIEW: DASHBOARD ──────────────────────────────────────────────────
+function renderDashboard() {
+  const P = window.PROGRESS;
+  const T = window.TRACKS;
+
+  // Per-track tint hues — spaced ~45° apart on the colour wheel for distinct, calm pastels.
+  const TRACK_HUE = { A: 145, B: 215, C: 265, D: 25, E: 335, F: 195, G: 175, H: 305 };
+
+  let totalDone = 0, totalAll = 0;
+  const trackCards = T.map(t => {
+    const done = (P.currentSession[t.letter] || 1) - 1;
+    totalDone += done;
+    totalAll += t.totalSessions;
+    const p = pct(done, t.totalSessions);
+    const cleanTitle = t.title.replace(/^Track\s+[A-H]\s*[—-]\s*/, "").split("(")[0].trim();
+    const hue = TRACK_HUE[t.letter] ?? 200;
+    return `
+      <a class="track-card" href="#/track/${t.letter}" style="--tint-h:${hue};">
+        <div class="tc-head">
+          <span class="tc-letter">${t.letter}</span>
+          <span class="tc-title">${esc(cleanTitle)}</span>
+        </div>
+        <div class="tc-bar"><div class="tc-bar-fill" style="width:${p}%;"></div></div>
+        <div class="tc-meta">
+          <span class="tc-count">${done} / ${t.totalSessions}</span>
+          <span class="tc-pct">${p}%</span>
+        </div>
+      </a>`;
+  }).join("");
+
+  const overallPct = pct(totalDone, totalAll);
+
+  const weekCells = T.map(t => {
+    const tgt = P.weeklyTargets[t.letter] || 0;
+    const got = P.weeklyTally[t.letter] || 0;
+    const dots = Array.from({length: tgt}, (_, i) =>
+      `<span class="dot ${i < got ? "filled" : ""}"></span>`).join("");
+    return `
+      <div class="week-cell">
+        <div class="week-letter">${t.letter}</div>
+        <div class="week-count">${got}<span class="target"> / ${tgt}</span></div>
+        <div class="week-dots">${dots}</div>
+      </div>`;
+  }).join("");
+
+  // Cadence stats
+  const today = new Date(P.generatedAt + "T00:00:00");
+  const last7 = P.sessionLog.filter(s => daysBetween(s.date, P.generatedAt) <= 7).length;
+  const last30 = P.sessionLog.filter(s => daysBetween(s.date, P.generatedAt) <= 30).length;
+  const streak = computeStreak(P.sessionLog, P.generatedAt);
+  const mostActive = computeMostActive(P.sessionLog);
+
+  // Suggested next session
+  const next = suggestNext();
+  const nextTrack = track(next.letter);
+  const nextSession = nextTrack
+    ? nextTrack.modules.flatMap(m => m.sessions).find(s => s.n === next.session)
+    : null;
+
+  // Milestones + weak spots
+  const milestones = P.milestones.map(m =>
+    `<li class="milestone ${m.done ? "done" : ""}"><span class="check ${m.done ? "done" : ""}"></span>${esc(m.label)}</li>`
+  ).join("");
+
+  const renderWeak = (arr, label) =>
+    arr.length === 0
+      ? `<div class="empty">none logged</div>`
+      : `<ul style="margin:0;padding-left:18px;">${arr.map(i => `<li>${esc(i)}</li>`).join("")}</ul>`;
+
+  const pendingHtml = pendingCount() === 0 ? "" : `
+    <div class="sync-banner">
+      <span><strong>${pendingCount()}</strong> session${pendingCount() > 1 ? "s" : ""} marked complete — pending sync to PROGRESS.md</span>
+      <div class="sync-banner-actions">
+        <button onclick="openSyncModal()">View &amp; sync</button>
+        <button onclick="if(confirm('Discard ${pendingCount()} pending completion(s)?')) clearAllPending()">Discard</button>
+      </div>
+    </div>`;
+
+  const xp = window.GAME.totalXp();
+  const r = window.GAME.rank(xp);
+  const allBadges = window.GAME.badges();
+  const earnedBadges = allBadges.filter(b => b.earned);
+  const nextBadges = allBadges
+    .filter(b => !b.earned && b.progressPct > 0)
+    .sort((a, b) => b.progressPct - a.progressPct)
+    .slice(0, 4);
+
+  const rankHtml = `
+    <section class="card">
+      <div class="rank-card">
+        <div class="rank-emblem">L${r.level}</div>
+        <div class="rank-info">
+          <span class="rank-level">Level ${r.level}${r.isMax ? " · MAX" : ""}</span>
+          <span class="rank-name">${esc(r.name)}</span>
+          <div class="rank-progress">
+            ${r.isMax ? "" : bar(Math.round(r.progress * 100))}
+            <div class="rank-progress-meta">
+              <span>${r.isMax ? "Curriculum mastered" : `${r.xpToNext} XP to ${esc(window.GAME.LEVELS[r.level]?.name || "next level")}`}</span>
+              <span>${earnedBadges.length} / ${allBadges.length} badges</span>
+            </div>
+          </div>
+        </div>
+        <div class="rank-xp">
+          <div class="rank-xp-value">${xp.toLocaleString()}</div>
+          <div class="rank-xp-label">XP</div>
+        </div>
+      </div>
+    </section>`;
+
+  main().innerHTML = `
+    <h1>Forge</h1>
+    <div class="tagline">Practice, until it's permanent.</div>
+    <div class="subtitle">${P.generatedAt} · week of ${P.weekStarting}</div>
+
+    ${pendingHtml}
+    ${rankHtml}
+
+    <section class="card suggested">
+      <h2>Suggested Next Session</h2>
+      <div style="font-size:16px;font-weight:600;margin-bottom:4px;">${next.letter} — ${nextTrack ? nextTrack.title.replace(/^Track\s+[A-H]\s*[—-]\s*/, "").split("(")[0].trim() : ""}</div>
+      <div style="color:var(--muted);font-size:13px;margin-bottom:12px;">Session ${next.session}${nextSession ? " — " + esc(nextSession.title) : ""}</div>
+      <div style="font-size:12px;color:var(--muted);font-style:italic;border-top:1px solid var(--border);padding-top:10px;">${esc(next.why)}</div>
+      <div class="actions" style="margin-top:14px;">
+        <a href="#/session/${next.letter}/${next.session}"><button class="primary">Open session</button></a>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Progress by Track</h2>
+      <div class="track-cards">${trackCards}</div>
+      <div class="track-overall">
+        <span>Overall</span>
+        <span class="track-count">${totalDone} / ${totalAll}</span>
+        ${bar(overallPct)}
+        <span class="pct">${overallPct}%</span>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>This Week · ${P.weekStarting}</h2>
+      <div class="week-grid">${weekCells}</div>
+    </section>
+
+    <section class="card">
+      <h2>Journey Map <a href="#/map" style="float:right;font-size:11px;font-weight:500;">open full map →</a></h2>
+      <div class="minimap-grid">
+        ${T.map(t => {
+          const tCur = P.currentSession[t.letter] || 1;
+          const cells = t.modules.flatMap(m => m.sessions).map(s => {
+            const cls = cellClass(t.letter, s.n, tCur);
+            return `<span class="map-cell ${cls}" title="${esc(t.letter)}-${s.n}: ${esc(s.title)}"></span>`;
+          }).join("");
+          const shortName = t.title.replace(/^Track\s+[A-H]\s*[—-]\s*/, "").split("(")[0].trim();
+          return `
+            <div class="minimap-row">
+              <a class="map-track-label" href="#/track/${t.letter}" style="color:inherit;text-decoration:none;font-size:12px;">
+                <span class="map-track-letter">${t.letter}</span>${shortName}
+              </a>
+              <div class="minimap-cells">${cells}</div>
+            </div>`;
+        }).join("")}
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Streak &amp; Cadence</h2>
+      <div class="stats-grid">
+        <div class="stat"><span class="stat-label">Streak</span><span class="stat-value">${streak}d</span></div>
+        <div class="stat"><span class="stat-label">Last 7 days</span><span class="stat-value">${last7}</span></div>
+        <div class="stat"><span class="stat-label">Last 30 days</span><span class="stat-value">${last30}</span></div>
+        <div class="stat"><span class="stat-label">Most active</span><span class="stat-value" style="font-size:14px;">${mostActive}</span></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Weak Spots</h2>
+      <div class="stat-grid-2" style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+        <div>
+          <div style="font-weight:500;margin-bottom:6px;">DSA patterns</div>
+          ${renderWeak(P.weakSpots.dsa || [], "dsa")}
+        </div>
+        <div>
+          <div style="font-weight:500;margin-bottom:6px;">System Design gaps</div>
+          ${renderWeak(P.weakSpots.systemDesign || [], "sd")}
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Achievements <a href="#/achievements" style="float:right;font-size:11px;font-weight:500;">view all →</a></h2>
+      <div class="stat-grid-2" style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+        <div>
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);font-weight:600;margin-bottom:8px;">Earned (${earnedBadges.length})</div>
+          ${earnedBadges.length === 0
+            ? `<div class="empty">No badges yet. Complete a session to earn your first.</div>`
+            : `<div class="badge-grid">${earnedBadges.slice(-6).reverse().map(badgeCardHtml).join("")}</div>`}
+        </div>
+        <div>
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);font-weight:600;margin-bottom:8px;">Up next</div>
+          ${nextBadges.length === 0
+            ? `<div class="empty">${earnedBadges.length === allBadges.length ? "All badges earned." : "Get started — every session counts toward something."}</div>`
+            : `<div class="badge-grid">${nextBadges.map(badgeCardHtml).join("")}</div>`}
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Milestones</h2>
+      <ul class="milestone-list">${milestones}</ul>
+    </section>
+  `;
+}
+
+// ─── VIEW: ACHIEVEMENTS ───────────────────────────────────────────────
+function badgeCardHtml(b) {
+  return `
+    <div class="badge ${b.earned ? "earned" : ""}" title="${esc(b.desc)}">
+      ${b.earned ? `<span class="badge-earned-tag">earned</span>` : ""}
+      <span class="badge-icon">${b.icon}</span>
+      <span class="badge-name">${esc(b.name)}</span>
+      <span class="badge-desc">${esc(b.desc)}</span>
+      ${b.earned ? "" : `
+        <div class="badge-progress"><div class="badge-progress-fill" style="width:${Math.round(b.progressPct*100)}%"></div></div>
+        <span style="font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums;">${b.progress} / ${b.target}</span>
+      `}
+    </div>`;
+}
+
+function renderAchievements() {
+  const xp = window.GAME.totalXp();
+  const r = window.GAME.rank(xp);
+  const all = window.GAME.badges();
+  const streak = window.GAME.streakStats();
+
+  // group badges
+  const groups = all.reduce((acc, b) => {
+    (acc[b.group] = acc[b.group] || []).push(b);
+    return acc;
+  }, {});
+
+  const groupOrder = ["Starter", "Progression", "Cadence", "Mastery", "Special"];
+
+  const groupsHtml = groupOrder.filter(g => groups[g]).map(g => {
+    const arr = groups[g];
+    const earned = arr.filter(b => b.earned).length;
+    return `
+      <div class="badge-group">
+        <div class="badge-group-title">
+          <span>${g}</span>
+          <span>${earned} / ${arr.length}</span>
+        </div>
+        <div class="badge-grid">
+          ${arr.map(badgeCardHtml).join("")}
+        </div>
+      </div>`;
+  }).join("");
+
+  // Levels table
+  const levelsHtml = window.GAME.LEVELS.map(L => {
+    const reached = xp >= L.xp;
+    const isCurrent = L.level === r.level;
+    return `
+      <div class="track-row" style="${isCurrent ? "background:var(--accent-soft);border-radius:4px;" : ""}">
+        <span class="track-name">
+          <span style="font-family:'JetBrains Mono';color:${reached ? "var(--accent)" : "var(--muted)"};margin-right:8px;font-weight:600;">L${L.level}</span>
+          ${esc(L.name)}
+          ${isCurrent ? ` <span style="font-size:10px;color:var(--accent);font-weight:600;">YOU ARE HERE</span>` : ""}
+        </span>
+        <span class="track-count">${L.xp} XP</span>
+        <span>${reached ? `<span style="color:var(--done)">✓ reached</span>` : ""}</span>
+        <span class="pct">${reached ? "" : `${L.xp - xp} XP away`}</span>
+      </div>`;
+  }).join("");
+
+  main().innerHTML = `
+    <h1>Achievements</h1>
+    <div class="subtitle">Level ${r.level} · ${esc(r.name)} · ${xp.toLocaleString()} XP</div>
+
+    <section class="card">
+      <div class="streak-stats">
+        <div class="stat">
+          <span class="stat-label">Current streak</span>
+          <span class="stat-value">${streak.current}d</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Longest streak</span>
+          <span class="stat-value">${streak.longest}d</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Days active</span>
+          <span class="stat-value">${streak.daysActive}</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Levels</h2>
+      ${levelsHtml}
+    </section>
+
+    <section class="card">
+      <h2>Badges (${all.filter(b => b.earned).length} / ${all.length})</h2>
+      ${groupsHtml}
+    </section>
+
+    <section class="card">
+      <h2>How XP works</h2>
+      <div class="session-body">
+        <ul>
+          <li>Every completed session earns XP based on its track and content:
+            <ul>
+              <li><strong>Base XP per track</strong>: A: 10, B: 15, C: 12, D: 12, E: 8, F: 15, G: 15, H: 15</li>
+              <li>Bonus: <code>+5</code> for drills/reviews, <code>+10</code> for "implement", <code>+15</code> for projects/builds, <code>+20</code> for capstones/synthesis, <code>+25</code> for mocks</li>
+            </ul>
+          </li>
+          <li>Finishing a <strong>module</strong> adds <code>+30 XP</code>.</li>
+          <li>Finishing a <strong>full track</strong> adds <code>+150 XP</code>.</li>
+          <li>Pending (UI-marked) completions count toward XP and badges immediately — your level won't drop after <code>/sync</code>.</li>
+        </ul>
+      </div>
+    </section>
+  `;
+}
+
+// ─── VIEW: TRACK DETAIL ───────────────────────────────────────────────
+function renderTrack(letter) {
+  const t = track(letter);
+  if (!t) { main().innerHTML = `<p>Track ${esc(letter)} not found.</p>`; return; }
+  const P = window.PROGRESS;
+  const cur = P.currentSession[letter] || 1;
+  const done = cur - 1;
+  const p = pct(done, t.totalSessions);
+
+  const modulesHtml = t.modules.map(m => {
+    const sessHtml = m.sessions.map(s => {
+      const persisted = s.n < cur;
+      const pending = isPending(letter, s.n);
+      const isDoneSession = persisted || pending;
+      const isNext = s.n === cur && !pending;
+      const ann = P.annotations[annKey(letter, s.n)];
+      const annNote = ann?.notes ? ` · note` : "";
+      const actions = pending
+        ? `<button onclick="event.preventDefault();event.stopPropagation();unmarkPending('${letter}',${s.n})">Undo</button>`
+        : (!persisted
+            ? `<button class="primary" onclick="event.preventDefault();event.stopPropagation();markComplete('${letter}',${s.n})">Mark complete</button>`
+            : "");
+      return `
+        <a class="session-row ${isDoneSession ? "done" : ""} ${isNext ? "next" : ""} ${pending ? "pending" : ""}" href="#/session/${letter}/${s.n}" style="text-decoration:none;color:inherit;">
+          <span class="check ${isDoneSession ? "done" : ""}"></span>
+          <span class="session-title">Session ${s.n} — ${esc(s.title)}</span>
+          <span class="session-status">
+            ${persisted ? "done" : pending ? "" : isNext ? "next" : ""}${annNote}
+            <span class="row-actions">
+              <button class="btn-ai compact" title="Learn this session with Gemini" onclick="event.preventDefault();event.stopPropagation();learnWithAI('${letter}',${s.n})">✨ AI</button>
+              ${actions}
+            </span>
+          </span>
+        </a>`;
+    }).join("");
+    const moduleDone = m.sessions.filter(s => isDone(letter, s.n)).length;
+    return `
+      <div class="module">
+        <div class="module-header">
+          <div class="module-title">${esc(m.title)}</div>
+          <div class="module-meta">${moduleDone}/${m.sessions.length} done</div>
+        </div>
+        ${sessHtml}
+      </div>`;
+  }).join("");
+
+  const resources = (window.RESOURCES && window.RESOURCES[letter]) || [];
+  const resourcesHtml = resources.length === 0 ? "" : `
+    <section class="card">
+      <h2>Resources &amp; References</h2>
+      <div class="resource-list">
+        ${resources.map(r => `
+          <div class="resource-row">
+            <span class="resource-kind">${esc(r.kind)}</span>
+            <div class="resource-main">
+              <a class="resource-title" href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.title)} ↗</a>
+              ${r.note ? `<span class="resource-note">${esc(r.note)}</span>` : ""}
+            </div>
+          </div>
+        `).join("")}
+      </div>
+    </section>`;
+
+  main().innerHTML = `
+    <div class="breadcrumb"><a href="#/dashboard">Dashboard</a> / <span>Track ${letter}</span></div>
+    <h1>${esc(t.title)}</h1>
+    <div class="subtitle">${done} of ${t.totalSessions} sessions complete · ${p}%</div>
+
+    <section class="card">
+      ${bar(p)}
+    </section>
+
+    <section class="card">
+      <h2>About this track</h2>
+      <div class="session-body">${md2html(t.intro)}</div>
+    </section>
+
+    ${resourcesHtml}
+
+    ${modulesHtml}
+
+    ${t.extras ? t.extras.map(e => `
+      <section class="card">
+        <h2>${esc(e.heading)}</h2>
+        <div class="session-body">${md2html(e.body)}</div>
+      </section>
+    `).join("") : ""}
+  `;
+}
+
+// ─── VIEW: SESSION DETAIL ─────────────────────────────────────────────
+function renderSession(letter, nStr) {
+  const t = track(letter);
+  const n = parseInt(nStr, 10);
+  if (!t) { main().innerHTML = `<p>Track not found.</p>`; return; }
+  const session = t.modules.flatMap(m => m.sessions).find(s => s.n === n);
+  const module = t.modules.find(m => m.sessions.some(s => s.n === n));
+  if (!session) { main().innerHTML = `<p>Session ${n} not found in track ${letter}.</p>`; return; }
+
+  const P = window.PROGRESS;
+  const persisted = n < (P.currentSession[letter] || 1);
+  const pending = isPending(letter, n);
+  const doneNow = persisted || pending;
+  const ann = P.annotations[annKey(letter, n)] || { notes: "", artifacts: [] };
+
+  // prev / next
+  const allSessions = t.modules.flatMap(m => m.sessions);
+  const idx = allSessions.findIndex(s => s.n === n);
+  const prev = idx > 0 ? allSessions[idx - 1] : null;
+  const next = idx < allSessions.length - 1 ? allSessions[idx + 1] : null;
+
+  const statusLabel = persisted
+    ? "✓ done (synced)"
+    : pending ? "⟳ marked done — pending sync"
+    : "in progress";
+
+  const completeBtn = persisted
+    ? ""
+    : pending
+      ? `<button onclick="unmarkPending('${letter}',${n})">Undo mark complete</button>`
+      : `<button class="primary" onclick="markComplete('${letter}',${n})">✓ Mark this session complete</button>`;
+
+  main().innerHTML = `
+    <div class="breadcrumb">
+      <a href="#/dashboard">Dashboard</a> /
+      <a href="#/track/${letter}">Track ${letter}</a> /
+      <span>Session ${n}</span>
+    </div>
+    <h1>Session ${n} — ${esc(session.title)}</h1>
+    <div class="subtitle">${esc(module.title)} · ${statusLabel}</div>
+
+    <div class="ai-launch">
+      <div class="ai-copy">
+        <strong>✨ Learn this session with AI<span class="mode-chip">${MODES[getMode()].icon} ${esc(MODES[getMode()].short)}</span></strong>
+        <span>Copies a tutor-style prompt to your clipboard — paste it into your favourite AI tool in a new tab. Switch mode in the sidebar.</span>
+      </div>
+      <button class="btn-ai" onclick="learnWithAI('${letter}',${n})">✨ Learn with AI</button>
+    </div>
+
+    <section class="card">
+      <div class="session-body">${md2html(session.body)}</div>
+    </section>
+
+    <section class="card">
+      <h2>Revision Notes</h2>
+      <div class="session-body" style="margin-bottom:12px;">${ann.notes ? md2html(ann.notes) : '<div class="empty">No notes yet. Add notes by editing <code>dashboard/data.js</code> — under <code>annotations</code>, add a key like <code>"' + letter + '-' + n + '"</code> with <code>notes</code> and optional <code>artifacts</code>.</div>'}</div>
+      ${ann.artifacts && ann.artifacts.length ? `
+        <h4>Artifacts</h4>
+        <ul>${ann.artifacts.map(a => `<li><a href="${esc(a.url)}" target="_blank" rel="noopener">${esc(a.title)}</a></li>`).join("")}</ul>
+      ` : ""}
+    </section>
+
+    <section class="card">
+      <h2>To work on this session</h2>
+      <div class="session-body">
+        <p>Read the session brief above and work through it on your own — code, sketch, take notes.</p>
+        <p>When you're done, mark it complete in <code>dashboard/data.js</code>: bump <code>currentSession.${letter}</code> to <strong>${n + 1}</strong>, increment <code>weeklyTally.${letter}</code>, and append an entry to <code>sessionLog</code>. Reload this page to see the update.</p>
+      </div>
+    </section>
+
+    <div class="actions">
+      ${completeBtn}
+      ${prev ? `<a href="#/session/${letter}/${prev.n}"><button>← Session ${prev.n}</button></a>` : ""}
+      ${next ? `<a href="#/session/${letter}/${next.n}"><button>Session ${next.n} →</button></a>` : ""}
+      <a href="#/track/${letter}" style="margin-left:auto;"><button>Back to track</button></a>
+    </div>
+  `;
+}
+
+// ─── VIEW: TRACK MAP ──────────────────────────────────────────────────
+function cellClass(letter, n, cur) {
+  if (n < cur) return "done";
+  if (isPending(letter, n)) return "pending";
+  if (n === cur) return "next";
+  return "todo";
+}
+
+function cellTip(letter, n, sess) {
+  return `${letter}-${n}: ${sess.title}`;
+}
+
+function renderMap() {
+  const P = window.PROGRESS;
+
+  const legend = `
+    <div class="map-legend">
+      <span class="map-legend-item"><span class="map-cell done"></span>Done</span>
+      <span class="map-legend-item"><span class="map-cell pending"></span>Pending sync</span>
+      <span class="map-legend-item"><span class="map-cell next"></span>Next up</span>
+      <span class="map-legend-item"><span class="map-cell todo"></span>Not started</span>
+      <span class="map-legend-item map-legend-hint">· Hover any cell for the session title · click to open</span>
+    </div>`;
+
+  const lanes = window.TRACKS.map(t => {
+    const cur = P.currentSession[t.letter] || 1;
+    const done = cur - 1;
+    const p = pct(done, t.totalSessions);
+    const shortName = t.title.replace(/^Track\s+[A-H]\s*[—-]\s*/, "").split("(")[0].trim();
+
+    const modulesHtml = t.modules.map(m => {
+      const cellsHtml = m.sessions.map(s => {
+        const cls = cellClass(t.letter, s.n, cur);
+        return `<a class="map-cell map-cell-link ${cls}"
+                   href="#/session/${t.letter}/${s.n}"
+                   data-tip="${esc(cellTip(t.letter, s.n, s))}"></a>`;
+      }).join("");
+      return `<div class="map-module" data-tip="${esc(m.title)}">${cellsHtml}</div>`;
+    }).join("");
+
+    return `
+      <div class="map-track">
+        <a class="map-track-label" href="#/track/${t.letter}" style="color:inherit;text-decoration:none;">
+          <span class="map-track-letter">${t.letter}</span>${shortName}
+        </a>
+        <div class="map-modules">${modulesHtml}</div>
+        <span class="map-track-pct">${done}/${t.totalSessions} · ${p}%</span>
+      </div>`;
+  }).join("");
+
+  // Aggregate stats
+  let totalDone = 0, totalAll = 0, totalPending = 0;
+  for (const t of window.TRACKS) {
+    totalDone += (P.currentSession[t.letter] || 1) - 1;
+    totalAll += t.totalSessions;
+  }
+  totalPending = pendingCount();
+
+  main().innerHTML = `
+    <h1>Track Map</h1>
+    <div class="subtitle">All 8 tracks at a glance. Each cell is one session. Modules are visually grouped.</div>
+
+    <section class="card">
+      <div class="stats-grid" style="margin-bottom:16px;">
+        <div class="stat"><span class="stat-label">Sessions done</span><span class="stat-value">${totalDone}</span></div>
+        <div class="stat"><span class="stat-label">Total</span><span class="stat-value">${totalAll}</span></div>
+        <div class="stat"><span class="stat-label">Pending sync</span><span class="stat-value">${totalPending}</span></div>
+        <div class="stat"><span class="stat-label">Overall</span><span class="stat-value">${pct(totalDone, totalAll)}%</span></div>
+      </div>
+      ${legend}
+      <div class="map-scroller">${lanes}</div>
+    </section>
+
+    <section class="card">
+      <h2>How to read this</h2>
+      <div class="session-body">
+        <ul>
+          <li>Each <strong>row</strong> is one track (A–H).</li>
+          <li>Each <strong>cell</strong> is one session. Cells are grouped into boxes per module.</li>
+          <li><strong>Hover</strong> any cell to see the session title; <strong>click</strong> to open the session.</li>
+          <li><strong>Hover a module box</strong> (between the cells) to see the module title.</li>
+          <li>Modules with more sessions are visibly wider — gives you a sense of weight without reading numbers.</li>
+        </ul>
+      </div>
+    </section>
+  `;
+}
+
+// ─── VIEW: LIBRARY ────────────────────────────────────────────────────
+function renderLibrary() {
+  const P = window.PROGRESS;
+  const items = (P.library || []);
+
+  const grouped = items.reduce((acc, it) => {
+    (acc[it.kind] = acc[it.kind] || []).push(it);
+    return acc;
+  }, {});
+
+  const sections = Object.entries(grouped).map(([kind, arr]) => `
+    <section class="card">
+      <h2>${esc(kind)}</h2>
+      <div class="library-grid">
+        ${arr.map(it => `
+          <a class="lib-card" href="${esc(it.path)}" target="_blank" rel="noopener" style="display:block;text-decoration:none;color:inherit;">
+            <div class="lib-kind">${esc(it.kind)}</div>
+            <div class="lib-title">${esc(it.title)}</div>
+            ${it.tags && it.tags.length ? `<div class="lib-tags">${it.tags.map(esc).join(" · ")}</div>` : ""}
+          </a>
+        `).join("")}
+      </div>
+    </section>
+  `).join("");
+
+  main().innerHTML = `
+    <h1>Library</h1>
+    <div class="subtitle">Cross-track artifacts: diagrams, cheat sheets, code, external references.</div>
+    ${items.length === 0 ? `
+      <section class="card">
+        <div class="empty">No artifacts yet. Add entries to <code>dashboard/data.js</code>'s <code>library</code> array and they'll appear here.</div>
+      </section>
+    ` : sections}
+
+    <section class="card">
+      <h2>How the library works</h2>
+      <div class="session-body">
+        <p>Anything you produce during learning — diagrams, cheat sheets, notes, completed projects — gets logged into <code>dashboard/data.js</code>'s <code>library</code> array by hand.</p>
+        <p>Each entry has a kind (<code>diagram</code>, <code>doc</code>, <code>code</code>, <code>link</code>), a title, a path, and tags.</p>
+      </div>
+    </section>
+  `;
+}
+
+// ─── DOMAIN: cadence + suggested next ────────────────────────────────
+function daysBetween(a, b) {
+  const d1 = new Date(a + "T00:00:00");
+  const d2 = new Date(b + "T00:00:00");
+  return Math.round((d2 - d1) / 86400000);
+}
+
+function computeStreak(log, today) {
+  if (!log.length) return 0;
+  const days = new Set(log.map(s => s.date));
+  let streak = 0;
+  let cursor = new Date(today + "T00:00:00");
+  while (true) {
+    const iso = cursor.toISOString().slice(0, 10);
+    if (days.has(iso)) { streak++; cursor.setDate(cursor.getDate() - 1); }
+    else if (streak === 0 && iso === today) { cursor.setDate(cursor.getDate() - 1); }
+    else break;
+  }
+  return streak;
+}
+
+function computeMostActive(log) {
+  if (!log.length) return "—";
+  const counts = {};
+  for (const s of log) counts[s.track] = (counts[s.track] || 0) + 1;
+  const [letter, count] = Object.entries(counts).sort((a,b) => b[1]-a[1])[0];
+  const t = track(letter);
+  return `${letter} (${count})`;
+}
+
+// Auto-selection algorithm — suggests the next session to do.
+function suggestNext() {
+  const P = window.PROGRESS;
+  const targets = P.weeklyTargets;
+  const tally = P.weeklyTally;
+
+  // Rule 1: any track with 0 sessions this week AND weeklyTarget >= 1
+  for (const letter of "ABCDEFGH") {
+    if ((tally[letter] || 0) === 0 && (targets[letter] || 0) >= 1) {
+      return makeSuggestion(letter, "Rule 1 — 0 sessions this week and weekly cadence ≥ 1.");
+    }
+  }
+  // Rule 2: A < 4 this week
+  if ((tally.A || 0) < 4) return makeSuggestion("A", "Rule 2 — DSA below its 4-5/week target.");
+  // Rule 3: B < 2 this week
+  if ((tally.B || 0) < 2) return makeSuggestion("B", "Rule 3 — System Design below its 2-3/week target.");
+
+  // Rule 4: weekend → prefer build tracks G/H/D/F (least sessions this week wins)
+  const day = new Date(P.generatedAt + "T00:00:00").getDay();
+  if (day === 0 || day === 6) {
+    const builds = ["G", "H", "D", "F"].sort((a,b) => (tally[a]||0) - (tally[b]||0));
+    return makeSuggestion(builds[0], "Rule 4 — Weekend, prefer build-heavy track.");
+  }
+
+  // Rule 5: round-robin C/D/E/F/G/H by least-recently-touched
+  const lastTouched = {};
+  for (const s of P.sessionLog) lastTouched[s.track] = s.date;
+  const cands = ["C","D","E","F","G","H"].sort((a,b) => {
+    const da = lastTouched[a] || "0000-00-00";
+    const db = lastTouched[b] || "0000-00-00";
+    return da.localeCompare(db);
+  });
+  return makeSuggestion(cands[0], "Rule 5 — Round-robin by least-recently-touched.");
+}
+
+function makeSuggestion(letter, why) {
+  return {
+    letter,
+    session: window.PROGRESS.currentSession[letter] || 1,
+    why
+  };
+}
+
+// ─── BOOT ─────────────────────────────────────────────────────────────
+// Auto-clean: drop pending entries that are already synced (PROGRESS has caught up).
+(function pruneSyncedPending() {
+  let changed = false;
+  for (const key of Object.keys(PENDING)) {
+    const [letter, nStr] = key.split("-");
+    const n = parseInt(nStr, 10);
+    if ((window.PROGRESS.currentSession[letter] || 1) > n) {
+      delete PENDING[key];
+      changed = true;
+    }
+  }
+  if (changed) savePending(PENDING);
+})();
+
+renderSidebar();
+navigate();
+
+// ─── MOBILE SIDEBAR ───────────────────────────────────────────────────
+(function setupMobileSidebar() {
+  const btn      = document.getElementById("menu-btn");
+  const backdrop = document.getElementById("sidebar-backdrop");
+  const body     = document.body;
+
+  function open()  { body.classList.add("sidebar-open");    btn.setAttribute("aria-expanded", "true");  }
+  function close() { body.classList.remove("sidebar-open"); btn.setAttribute("aria-expanded", "false"); }
+  function toggle() { body.classList.contains("sidebar-open") ? close() : open(); }
+
+  btn.addEventListener("click", toggle);
+  backdrop.addEventListener("click", close);
+
+  // Auto-close on navigation (mobile only)
+  window.addEventListener("hashchange", close);
+
+  // Esc to close
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape" && body.classList.contains("sidebar-open")) close();
+  });
+
+  // If the viewport grows past the breakpoint, drop any open state
+  window.matchMedia("(min-width: 721px)").addEventListener("change", e => {
+    if (e.matches) close();
+  });
+})();
+
+// ─── DESKTOP SIDEBAR COLLAPSE ─────────────────────────────────────────
+(function setupSidebarCollapse() {
+  const COLLAPSE_KEY = "learning.sidebar.collapsed";
+  const collapseBtn = document.getElementById("sidebar-collapse");
+  const reopenBtn   = document.getElementById("sidebar-reopen");
+  const body        = document.body;
+
+  if (localStorage.getItem(COLLAPSE_KEY) === "1") {
+    body.classList.add("sidebar-collapsed");
+  }
+
+  function collapse() {
+    body.classList.add("sidebar-collapsed");
+    localStorage.setItem(COLLAPSE_KEY, "1");
+  }
+  function expand() {
+    body.classList.remove("sidebar-collapsed");
+    localStorage.setItem(COLLAPSE_KEY, "0");
+  }
+
+  collapseBtn.addEventListener("click", collapse);
+  reopenBtn.addEventListener("click", expand);
+})();
+
+// ─── THEME TOGGLE ─────────────────────────────────────────────────────
+(function setupThemeToggle() {
+  const THEME_KEY = "learning.theme";
+  const root = document.documentElement;
+  const buttons = document.querySelectorAll(".seg-toggle button[data-theme-set]");
+
+  function current() {
+    return localStorage.getItem(THEME_KEY) || "auto";
+  }
+  function apply(theme) {
+    root.setAttribute("data-theme", theme);
+    localStorage.setItem(THEME_KEY, theme);
+    buttons.forEach(b => b.classList.toggle("active", b.dataset.themeSet === theme));
+  }
+
+  buttons.forEach(b => b.addEventListener("click", () => apply(b.dataset.themeSet)));
+  apply(current());
+})();
+
+// ─── LEARNING MODE TOGGLE ─────────────────────────────────────────────
+(function setupModeToggle() {
+  const buttons = document.querySelectorAll(".seg-toggle button[data-mode-set]");
+
+  function apply(mode, { showInfo } = { showInfo: false }) {
+    const prev = getMode();
+    setMode(mode);
+    buttons.forEach(b => b.classList.toggle("active", b.dataset.modeSet === mode));
+    if (typeof navigate === "function") navigate();
+    if (showInfo && prev !== mode) openModeInfoModal(mode);
+  }
+
+  buttons.forEach(b => b.addEventListener("click", () => apply(b.dataset.modeSet, { showInfo: true })));
+  apply(getMode()); // initial — no modal
+})();
+</script>
+</body>
+</html>
